@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bufio"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -11,6 +12,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -47,15 +49,12 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("discover endpoints: %w", err)
 	}
-	o.log("Authorization: %s", meta.AuthorizationEndpoint)
-	o.log("Token: %s", meta.TokenEndpoint)
 
 	tokens := o.Store.Load()
 	var clientID, clientSecret string
 	if tokens != nil && tokens.ClientID != "" {
 		clientID = tokens.ClientID
 		clientSecret = tokens.ClientSecret
-		o.log("Using existing client registration: %s", clientID)
 	} else {
 		o.log("Registering new OAuth client...")
 		reg, err := o.register(ctx, meta.RegistrationEndpoint)
@@ -64,7 +63,6 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 		}
 		clientID = reg.ClientID
 		clientSecret = reg.ClientSecret
-		o.log("Registered client: %s", clientID)
 	}
 
 	verifier, err := generateVerifier()
@@ -79,7 +77,6 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 	}
 	port := listener.Addr().(*net.TCPAddr).Port
 	redirectURI := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
-	o.log("Callback server on %s", redirectURI)
 
 	stateBytes := make([]byte, 16)
 	if _, err := rand.Read(stateBytes); err != nil {
@@ -97,7 +94,8 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 	)
 
 	fmt.Println("Opening browser for authentication...")
-	fmt.Printf("If the browser doesn't open, visit:\n%s\n\n", authURL)
+	fmt.Printf("Visit:\n%s\n\n", authURL)
+	fmt.Println("Waiting for callback... If on a remote server, paste the redirect URL below:")
 	openBrowser(authURL)
 
 	codeCh := make(chan string, 1)
@@ -127,6 +125,31 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 
 	server := &http.Server{Handler: mux}
 	go func() { _ = server.Serve(listener) }()
+
+	go func() {
+		scanner := bufio.NewScanner(os.Stdin)
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if line == "" {
+				continue
+			}
+			parsed, err := url.Parse(line)
+			if err != nil {
+				continue
+			}
+			code := parsed.Query().Get("code")
+			pastedState := parsed.Query().Get("state")
+			if code == "" {
+				continue
+			}
+			if pastedState != "" && pastedState != state {
+				errCh <- fmt.Errorf("state mismatch in pasted URL")
+				return
+			}
+			codeCh <- code
+			return
+		}
+	}()
 
 	var code string
 	select {
@@ -201,8 +224,8 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 }
 
 func (o *OAuthConfig) discover(ctx context.Context) (*serverMetadata, error) {
-	url := strings.TrimRight(o.ServerURL, "/") + "/.well-known/oauth-authorization-server"
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	reqURL := strings.TrimRight(o.ServerURL, "/") + "/.well-known/oauth-authorization-server"
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, err
 	}
