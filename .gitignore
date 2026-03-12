@@ -1,0 +1,11 @@
+openmarkers
+openmarkers-cli
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+.env
+.DS_Store

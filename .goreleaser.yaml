@@ -1,0 +1,42 @@
+version: 2
+
+project_name: openmarkers
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - binary: openmarkers
+    main: ./main.go
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w
+
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  draft: false
+  prerelease: auto
+
+brews:
+  - name: openmarkers
+    repository:
+      owner: nezdemkovski
+      name: homebrew-tap
+      token: "{{ .Env.RELEASE_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/nezdemkovski/openmarkers-cli
+    description: "OpenMarkers CLI — biomarker and blood test tracker"
+    license: MIT
