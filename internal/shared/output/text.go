@@ -43,6 +43,8 @@ func (f *TextFormatter) Output(data any, columns []Column) error {
 	return nil
 }
 
+func (f *TextFormatter) SetMeta(_ string, _ any) {}
+
 func (f *TextFormatter) Error(code string, message string) error {
 	fmt.Fprintf(os.Stderr, "Error [%s]: %s\n", code, message)
 	return nil
@@ -134,6 +136,9 @@ func extractRow(v reflect.Value, columns []Column) []string {
 	}
 
 	switch v.Kind() {
+	case reflect.String:
+		row[0] = v.String()
+		return row
 	case reflect.Map:
 		for i, col := range columns {
 			val := v.MapIndex(reflect.ValueOf(col.Key))

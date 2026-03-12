@@ -19,13 +19,12 @@ var timelineCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		var entries []models.TimelineEntry
-		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+pid+"/timeline", &entries); err != nil {
+		var dates []string
+		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+pid+"/timeline", &dates); err != nil {
 			return handleError(err)
 		}
-		return ctx.Output.Output(entries, []output.Column{
-			{Title: "Date", Key: "date", Width: 12},
-			{Title: "Count", Key: "count", Width: 6},
+		return ctx.Output.Output(dates, []output.Column{
+			{Title: "Date", Width: 12},
 		})
 	},
 }

@@ -39,7 +39,7 @@ type BiomarkerData struct {
 type ResultData struct {
 	ID    int    `json:"id,omitempty"`
 	Date  string `json:"date"`
-	Value any    `json:"value"`
+	Value NumValue `json:"value"`
 }
 
 type PublicProfile struct {

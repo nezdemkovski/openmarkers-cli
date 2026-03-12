@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
@@ -150,11 +152,26 @@ func requireAuth() error {
 }
 
 func requireProfile(args []string) (string, error) {
-	if len(args) > 0 {
-		return args[0], nil
+	var pid string
+
+	switch {
+	case len(args) > 0:
+		pid = args[0]
+	case ctx.ProfileID != "":
+		pid = ctx.ProfileID
+	default:
+		var profiles []struct {
+			ID int `json:"id"`
+		}
+		if err := ctx.Client.Get(context.Background(), "/api/profiles", &profiles); err == nil && len(profiles) == 1 {
+			pid = strconv.Itoa(profiles[0].ID)
+		}
 	}
-	if ctx.ProfileID != "" {
-		return ctx.ProfileID, nil
+
+	if pid == "" {
+		return "", fmt.Errorf("profile ID required: provide as argument or use --profile flag")
 	}
-	return "", fmt.Errorf("profile ID required: provide as argument or use --profile flag")
+
+	ctx.Output.SetMeta("profile_id", pid)
+	return pid, nil
 }

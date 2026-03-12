@@ -30,6 +30,8 @@ func (f *TableFormatter) Output(data any, columns []Column) error {
 	return tf.Output(data, columns)
 }
 
+func (f *TableFormatter) SetMeta(_ string, _ any) {}
+
 func (f *TableFormatter) Error(code string, message string) error {
 	fmt.Fprintf(os.Stderr, "%s %s\n", ui.ErrorStyle.Render("Error ["+code+"]:"), message)
 	return nil

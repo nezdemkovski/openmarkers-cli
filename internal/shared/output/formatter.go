@@ -24,6 +24,7 @@ type Column struct {
 type Formatter interface {
 	Output(data any, columns []Column) error
 	Error(code string, message string) error
+	SetMeta(key string, value any)
 }
 
 type Writer struct {
@@ -46,6 +47,10 @@ func (w *Writer) Output(data any, columns []Column) error {
 
 func (w *Writer) Error(code string, message string) error {
 	return w.Formatter.Error(code, message)
+}
+
+func (w *Writer) SetMeta(key string, value any) {
+	w.Formatter.SetMeta(key, value)
 }
 
 func (w *Writer) Verbose(format string, args ...any) {
