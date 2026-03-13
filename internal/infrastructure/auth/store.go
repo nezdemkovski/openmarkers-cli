@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -42,7 +43,8 @@ func (s *Store) Load() *Tokens {
 	defer s.mu.Unlock()
 
 	if s.cached != nil {
-		return s.cached
+		t := *s.cached
+		return &t
 	}
 
 	data, err := os.ReadFile(s.path)
@@ -69,26 +71,41 @@ func (s *Store) Load() *Tokens {
 	}
 
 	s.cached = tokens
-	return s.cached
+	t := *s.cached
+	return &t
 }
 
 func (s *Store) Save(tokens *Tokens) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	warnedInsecure := false
+	warnInsecure := func(insecure bool) {
+		if insecure && !warnedInsecure {
+			fmt.Fprintln(os.Stderr, "Warning: storing tokens in plaintext file (keyring unavailable)")
+			warnedInsecure = true
+		}
+	}
+
 	if tokens.AccessToken != "" {
-		if _, _, err := secrets.Set(secrets.KeyAccessToken, tokens.AccessToken); err != nil {
+		if _, insecure, err := secrets.Set(secrets.KeyAccessToken, tokens.AccessToken); err != nil {
 			return fmt.Errorf("store access token: %w", err)
+		} else {
+			warnInsecure(insecure)
 		}
 	}
 	if tokens.RefreshToken != "" {
-		if _, _, err := secrets.Set(secrets.KeyRefreshToken, tokens.RefreshToken); err != nil {
+		if _, insecure, err := secrets.Set(secrets.KeyRefreshToken, tokens.RefreshToken); err != nil {
 			return fmt.Errorf("store refresh token: %w", err)
+		} else {
+			warnInsecure(insecure)
 		}
 	}
 	if tokens.ClientSecret != "" {
-		if _, _, err := secrets.Set(secrets.KeyClientSecret, tokens.ClientSecret); err != nil {
+		if _, insecure, err := secrets.Set(secrets.KeyClientSecret, tokens.ClientSecret); err != nil {
 			return fmt.Errorf("store client secret: %w", err)
+		} else {
+			warnInsecure(insecure)
 		}
 	}
 
@@ -118,9 +135,16 @@ func (s *Store) Delete() error {
 
 	s.cached = nil
 
-	secrets.DeleteAll()
+	var errs []error
+	if err := secrets.DeleteAll(); err != nil {
+		errs = append(errs, err)
+	}
 
-	return os.Remove(s.path)
+	if err := os.Remove(s.path); err != nil && !os.IsNotExist(err) {
+		errs = append(errs, err)
+	}
+
+	return errors.Join(errs...)
 }
 
 func (s *Store) HasTokens() bool {

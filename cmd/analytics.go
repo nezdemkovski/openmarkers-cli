@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/openmarkers/openmarkers-cli/internal/shared/models"
 	"github.com/openmarkers/openmarkers-cli/internal/shared/output"
@@ -20,7 +21,7 @@ var timelineCmd = &cobra.Command{
 			return err
 		}
 		var dates []string
-		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+pid+"/timeline", &dates); err != nil {
+		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+url.PathEscape(pid)+"/timeline", &dates); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(dates, []output.Column{
@@ -43,7 +44,7 @@ var snapshotCmd = &cobra.Command{
 			return err
 		}
 		var entries []models.SnapshotEntry
-		path := "/api/profiles/" + pid + "/snapshot?date=" + snapshotDate
+		path := "/api/profiles/" + url.PathEscape(pid) + "/snapshot?date=" + url.QueryEscape(snapshotDate)
 		if err := ctx.Client.Get(context.Background(), path, &entries); err != nil {
 			return handleError(err)
 		}
@@ -73,14 +74,14 @@ var trendsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		path := "/api/profiles/" + pid + "/trends"
+		path := "/api/profiles/" + url.PathEscape(pid) + "/trends"
 		sep := "?"
 		if trendsBiomarker != "" {
-			path += sep + "biomarker_id=" + trendsBiomarker
+			path += sep + "biomarker_id=" + url.QueryEscape(trendsBiomarker)
 			sep = "&"
 		}
 		if trendsCategory != "" {
-			path += sep + "category_id=" + trendsCategory
+			path += sep + "category_id=" + url.QueryEscape(trendsCategory)
 		}
 		var entries []models.TrendEntry
 		if err := ctx.Client.Get(context.Background(), path, &entries); err != nil {
@@ -113,7 +114,7 @@ var compareCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		path := "/api/profiles/" + pid + "/compare?date1=" + compareDate1 + "&date2=" + compareDate2
+		path := "/api/profiles/" + url.PathEscape(pid) + "/compare?date1=" + url.QueryEscape(compareDate1) + "&date2=" + url.QueryEscape(compareDate2)
 		var entries []models.CompareEntry
 		if err := ctx.Client.Get(context.Background(), path, &entries); err != nil {
 			return handleError(err)
@@ -140,7 +141,7 @@ var correlationsCmd = &cobra.Command{
 			return err
 		}
 		var entries []models.CorrelationGroup
-		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+pid+"/correlations", &entries); err != nil {
+		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+url.PathEscape(pid)+"/correlations", &entries); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(entries, []output.Column{
@@ -162,7 +163,7 @@ var bioageCmd = &cobra.Command{
 			return err
 		}
 		var entries []models.BioAgeEntry
-		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+pid+"/biological-age", &entries); err != nil {
+		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+url.PathEscape(pid)+"/biological-age", &entries); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(entries, nil)
@@ -182,9 +183,9 @@ var analysisCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		path := "/api/profiles/" + pid + "/analysis-prompt"
+		path := "/api/profiles/" + url.PathEscape(pid) + "/analysis-prompt"
 		if analysisLang != "" {
-			path += "?lang=" + analysisLang
+			path += "?lang=" + url.QueryEscape(analysisLang)
 		}
 		var result models.AnalysisPrompt
 		if err := ctx.Client.Get(context.Background(), path, &result); err != nil {

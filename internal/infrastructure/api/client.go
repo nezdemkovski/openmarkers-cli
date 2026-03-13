@@ -45,7 +45,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, body any) (
 			if time.Now().Unix() >= tokens.ExpiresAt-30 {
 				c.log("Token expired or expiring soon, refreshing...")
 				if err := c.refreshToken(ctx, tokens); err != nil {
-					c.log("Token refresh failed: %v", err)
+					return nil, fmt.Errorf("token refresh: %w", err)
 				}
 			}
 		}

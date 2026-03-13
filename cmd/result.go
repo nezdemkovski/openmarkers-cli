@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 
 	"github.com/openmarkers/openmarkers-cli/internal/shared/models"
@@ -39,18 +40,18 @@ var resultListCmd = &cobra.Command{
 		if pid == "" {
 			return fmt.Errorf("--profile is required")
 		}
-		path := "/api/results?profile_id=" + pid
+		path := "/api/results?profile_id=" + url.QueryEscape(pid)
 		if resultCategory != "" {
-			path += "&category_id=" + resultCategory
+			path += "&category_id=" + url.QueryEscape(resultCategory)
 		}
 		if resultBiomarker != "" {
-			path += "&biomarker_id=" + resultBiomarker
+			path += "&biomarker_id=" + url.QueryEscape(resultBiomarker)
 		}
 		if resultDateFrom != "" {
-			path += "&date_from=" + resultDateFrom
+			path += "&date_from=" + url.QueryEscape(resultDateFrom)
 		}
 		if resultDateTo != "" {
-			path += "&date_to=" + resultDateTo
+			path += "&date_to=" + url.QueryEscape(resultDateTo)
 		}
 		var results []models.Result
 		if err := ctx.Client.Get(context.Background(), path, &results); err != nil {
@@ -83,8 +84,8 @@ var resultAddCmd = &cobra.Command{
 
 		var body any
 
-		stat, _ := os.Stdin.Stat()
-		if (stat.Mode() & os.ModeCharDevice) == 0 {
+		stat, err := os.Stdin.Stat()
+		if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 			data, err := io.ReadAll(os.Stdin)
 			if err != nil {
 				return fmt.Errorf("read stdin: %w", err)
@@ -149,8 +150,8 @@ var resultBatchAddCmd = &cobra.Command{
 				return fmt.Errorf("read file: %w", err)
 			}
 		} else {
-			stat, _ := os.Stdin.Stat()
-			if (stat.Mode() & os.ModeCharDevice) == 0 {
+			stat, err := os.Stdin.Stat()
+			if err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
 				data, err = io.ReadAll(os.Stdin)
 				if err != nil {
 					return fmt.Errorf("read stdin: %w", err)
@@ -216,7 +217,7 @@ var resultUpdateCmd = &cobra.Command{
 			return fmt.Errorf("at least one field to update is required")
 		}
 		var result models.Result
-		if err := ctx.Client.Patch(context.Background(), "/api/results/"+args[0], body, &result); err != nil {
+		if err := ctx.Client.Patch(context.Background(), "/api/results/"+url.PathEscape(args[0]), body, &result); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(result, nil)
@@ -232,7 +233,7 @@ var resultDeleteCmd = &cobra.Command{
 			return err
 		}
 		var result map[string]any
-		if err := ctx.Client.Delete(context.Background(), "/api/results/"+args[0], &result); err != nil {
+		if err := ctx.Client.Delete(context.Background(), "/api/results/"+url.PathEscape(args[0]), &result); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(result, nil)

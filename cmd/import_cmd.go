@@ -51,10 +51,14 @@ var importCmd = &cobra.Command{
 				return handleError(err)
 			}
 			if checkResult.Exists {
+				userName := "unknown"
+				if checkResult.User != nil {
+					userName = checkResult.User.Name
+				}
 				if ctx.IsJSON {
 					return ctx.Output.Output(map[string]any{
 						"warning":  "profile_exists",
-						"message":  fmt.Sprintf("Profile '%s' already exists", checkResult.User.Name),
+						"message":  fmt.Sprintf("Profile '%s' already exists", userName),
 						"existing": checkResult.User,
 					}, nil)
 				}

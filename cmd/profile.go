@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/openmarkers/openmarkers-cli/internal/shared/models"
 	"github.com/openmarkers/openmarkers-cli/internal/shared/output"
@@ -44,7 +45,7 @@ var profileGetCmd = &cobra.Command{
 			return err
 		}
 		var data models.ProfileData
-		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+args[0], &data); err != nil {
+		if err := ctx.Client.Get(context.Background(), "/api/profiles/"+url.PathEscape(args[0]), &data); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(data, nil)
@@ -113,7 +114,7 @@ var profileUpdateCmd = &cobra.Command{
 			return fmt.Errorf("at least one field to update is required")
 		}
 		var profile models.Profile
-		if err := ctx.Client.Patch(context.Background(), "/api/profiles/"+args[0], body, &profile); err != nil {
+		if err := ctx.Client.Patch(context.Background(), "/api/profiles/"+url.PathEscape(args[0]), body, &profile); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(profile, nil)
@@ -129,7 +130,7 @@ var profileDeleteCmd = &cobra.Command{
 			return err
 		}
 		var result map[string]any
-		if err := ctx.Client.Delete(context.Background(), "/api/profiles/"+args[0], &result); err != nil {
+		if err := ctx.Client.Delete(context.Background(), "/api/profiles/"+url.PathEscape(args[0]), &result); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(result, nil)

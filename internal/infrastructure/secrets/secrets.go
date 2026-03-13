@@ -76,15 +76,25 @@ func Set(key, value string) (source Source, insecure bool, err error) {
 	return SourceFile, true, nil
 }
 
-func Delete(key string) {
-	_ = deleteFromKeyringWithTimeout(key)
-	_ = deleteFromFile(key)
+func Delete(key string) error {
+	var errs []error
+	if err := deleteFromKeyringWithTimeout(key); err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		errs = append(errs, fmt.Errorf("keyring delete %s: %w", key, err))
+	}
+	if err := deleteFromFile(key); err != nil && !os.IsNotExist(err) {
+		errs = append(errs, fmt.Errorf("file delete %s: %w", key, err))
+	}
+	return errors.Join(errs...)
 }
 
-func DeleteAll() {
+func DeleteAll() error {
+	var errs []error
 	for _, key := range []string{KeyAccessToken, KeyRefreshToken, KeyClientID, KeyClientSecret} {
-		Delete(key)
+		if err := Delete(key); err != nil {
+			errs = append(errs, err)
+		}
 	}
+	return errors.Join(errs...)
 }
 
 func toEnvVar(key string) string {
