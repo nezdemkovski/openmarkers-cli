@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/openmarkers/openmarkers-cli/internal/shared/models"
 	"github.com/openmarkers/openmarkers-cli/internal/shared/output"
@@ -25,7 +26,7 @@ var biomarkerListCmd = &cobra.Command{
 		}
 		path := "/api/biomarkers"
 		if biomarkerCategoryFilter != "" {
-			path += "?category_id=" + biomarkerCategoryFilter
+			path += "?category_id=" + url.QueryEscape(biomarkerCategoryFilter)
 		}
 		var biomarkers []models.Biomarker
 		if err := ctx.Client.Get(context.Background(), path, &biomarkers); err != nil {
@@ -132,7 +133,7 @@ var biomarkerUpdateCmd = &cobra.Command{
 			return fmt.Errorf("at least one field to update is required")
 		}
 		var biomarker models.Biomarker
-		if err := ctx.Client.Patch(context.Background(), "/api/biomarkers/"+args[0], body, &biomarker); err != nil {
+		if err := ctx.Client.Patch(context.Background(), "/api/biomarkers/"+url.PathEscape(args[0]), body, &biomarker); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(biomarker, nil)

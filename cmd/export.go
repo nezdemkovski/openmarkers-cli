@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -22,7 +23,7 @@ var exportCmd = &cobra.Command{
 			return err
 		}
 
-		data, err := ctx.Client.GetRaw(context.Background(), "/api/profiles/"+pid+"/export")
+		data, err := ctx.Client.GetRaw(context.Background(), "/api/profiles/"+url.PathEscape(pid)+"/export")
 		if err != nil {
 			return handleError(err)
 		}

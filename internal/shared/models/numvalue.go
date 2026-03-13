@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 )
 
@@ -31,7 +32,7 @@ func (n *NumValue) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	return &json.UnmarshalTypeError{Value: string(data), Type: nil}
+	return &json.UnmarshalTypeError{Value: string(data), Type: reflect.TypeFor[NumValue]()}
 }
 
 func (n NumValue) MarshalJSON() ([]byte, error) {

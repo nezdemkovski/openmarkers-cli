@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/openmarkers/openmarkers-cli/internal/shared/models"
 	"github.com/openmarkers/openmarkers-cli/internal/shared/output"
@@ -34,7 +35,7 @@ var publicGetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var data models.ProfileData
-		if err := ctx.Client.Get(context.Background(), "/api/public/"+args[0], &data); err != nil {
+		if err := ctx.Client.Get(context.Background(), "/api/public/"+url.PathEscape(args[0]), &data); err != nil {
 			return handleError(err)
 		}
 		return ctx.Output.Output(data, nil)

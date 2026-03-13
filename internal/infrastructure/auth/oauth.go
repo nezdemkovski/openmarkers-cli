@@ -20,9 +20,10 @@ import (
 )
 
 type OAuthConfig struct {
-	ServerURL string
-	Store     *Store
-	LogFunc   func(string, ...any)
+	ServerURL  string
+	Store      *Store
+	LogFunc    func(string, ...any)
+	HTTPClient *http.Client
 }
 
 type serverMetadata struct {
@@ -35,6 +36,13 @@ type serverMetadata struct {
 type clientRegistration struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
+}
+
+func (o *OAuthConfig) httpClient() *http.Client {
+	if o.HTTPClient != nil {
+		return o.HTTPClient
+	}
+	return &http.Client{Timeout: 30 * time.Second}
 }
 
 func (o *OAuthConfig) log(format string, args ...any) {
@@ -186,7 +194,7 @@ func (o *OAuthConfig) Login(ctx context.Context) error {
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := o.httpClient().Do(req)
 	if err != nil {
 		return fmt.Errorf("token exchange: %w", err)
 	}
@@ -229,7 +237,7 @@ func (o *OAuthConfig) discover(ctx context.Context) (*serverMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := o.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +260,10 @@ func (o *OAuthConfig) register(ctx context.Context, endpoint string) (*clientReg
 		"redirect_uris": []string{"http://127.0.0.1/callback"},
 		"client_name":   "OpenMarkers CLI",
 	}
-	data, _ := json.Marshal(body)
+	data, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("marshal registration body: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", endpoint, strings.NewReader(string(data)))
 	if err != nil {
@@ -260,7 +271,7 @@ func (o *OAuthConfig) register(ctx context.Context, endpoint string) (*clientReg
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := o.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
