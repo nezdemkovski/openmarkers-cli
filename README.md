@@ -51,6 +51,11 @@ openmarkers auth logout     # Delete stored credentials
 openmarkers auth status     # Check authentication status
 ```
 
+Login discovers OpenMarkers OAuth Protected Resource metadata from
+`https://openmarkers.app`, then uses the shared OpenMarkers auth realm. New
+logins register a public PKCE client with the exact local callback URL and do
+not require a client secret.
+
 ### Profiles
 
 ```bash
@@ -172,7 +177,7 @@ Resolution order: flag > env > config file > default.
 
 ### Token storage
 
-Credentials are stored securely via OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service) with automatic fallback to an encrypted config file.
+Credentials are stored securely via OS keyring (macOS Keychain, Windows Credential Manager, Linux Secret Service) with automatic fallback to a local config file. `auth logout` also removes legacy client-secret entries from older CLI logins.
 
 ## Shell completions
 

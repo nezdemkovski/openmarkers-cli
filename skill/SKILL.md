@@ -23,7 +23,7 @@ openmarkers auth status --json            # Check if authenticated
 openmarkers auth logout                   # Delete stored credentials
 ```
 
-Tokens are stored in OS keyring (macOS Keychain, etc.) with file fallback. Token refresh is automatic.
+Login uses OpenMarkers protected-resource discovery and the shared auth realm. Tokens are stored in OS keyring (macOS Keychain, etc.) with file fallback. Token refresh is automatic.
 
 ## Global Flags
 

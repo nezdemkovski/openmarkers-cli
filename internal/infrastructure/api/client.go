@@ -99,6 +99,9 @@ func (c *Client) refreshToken(ctx context.Context, tokens *auth.Tokens) error {
 		"refresh_token": {tokens.RefreshToken},
 		"client_id":     {tokens.ClientID},
 	}
+	if tokens.Resource != "" {
+		form.Set("resource", tokens.Resource)
+	}
 	if tokens.ClientSecret != "" {
 		form.Set("client_secret", tokens.ClientSecret)
 	}

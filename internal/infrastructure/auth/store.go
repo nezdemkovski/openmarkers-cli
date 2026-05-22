@@ -11,18 +11,22 @@ import (
 )
 
 type Tokens struct {
-	AccessToken   string `json:"access_token,omitempty"`
-	RefreshToken  string `json:"refresh_token,omitempty"`
-	ExpiresAt     int64  `json:"expires_at"`
-	ClientID      string `json:"client_id"`
-	ClientSecret  string `json:"client_secret,omitempty"`
-	TokenEndpoint string `json:"token_endpoint"`
+	AccessToken           string `json:"access_token,omitempty"`
+	RefreshToken          string `json:"refresh_token,omitempty"`
+	ExpiresAt             int64  `json:"expires_at"`
+	ClientID              string `json:"client_id"`
+	ClientSecret          string `json:"client_secret,omitempty"`
+	TokenEndpoint         string `json:"token_endpoint"`
+	AuthorizationEndpoint string `json:"authorization_endpoint,omitempty"`
+	Resource              string `json:"resource,omitempty"`
 }
 
 type authMeta struct {
-	ExpiresAt     int64  `json:"expires_at"`
-	ClientID      string `json:"client_id"`
-	TokenEndpoint string `json:"token_endpoint"`
+	ExpiresAt             int64  `json:"expires_at"`
+	ClientID              string `json:"client_id"`
+	TokenEndpoint         string `json:"token_endpoint"`
+	AuthorizationEndpoint string `json:"authorization_endpoint,omitempty"`
+	Resource              string `json:"resource,omitempty"`
 }
 
 type Store struct {
@@ -60,12 +64,14 @@ func (s *Store) Load() *Tokens {
 	clientSecret, _, _ := secrets.Get(secrets.KeyClientSecret)
 
 	tokens := &Tokens{
-		AccessToken:   accessToken,
-		RefreshToken:  refreshToken,
-		ExpiresAt:     meta.ExpiresAt,
-		ClientID:      meta.ClientID,
-		ClientSecret:  clientSecret,
-		TokenEndpoint: meta.TokenEndpoint,
+		AccessToken:           accessToken,
+		RefreshToken:          refreshToken,
+		ExpiresAt:             meta.ExpiresAt,
+		ClientID:              meta.ClientID,
+		ClientSecret:          clientSecret,
+		TokenEndpoint:         meta.TokenEndpoint,
+		AuthorizationEndpoint: meta.AuthorizationEndpoint,
+		Resource:              meta.Resource,
 	}
 
 	s.cached = tokens
@@ -90,12 +96,16 @@ func (s *Store) Save(tokens *Tokens) error {
 		if _, _, err := secrets.Set(secrets.KeyClientSecret, tokens.ClientSecret); err != nil {
 			return fmt.Errorf("store client secret: %w", err)
 		}
+	} else {
+		secrets.Delete(secrets.KeyClientSecret)
 	}
 
 	meta := authMeta{
-		ExpiresAt:     tokens.ExpiresAt,
-		ClientID:      tokens.ClientID,
-		TokenEndpoint: tokens.TokenEndpoint,
+		ExpiresAt:             tokens.ExpiresAt,
+		ClientID:              tokens.ClientID,
+		TokenEndpoint:         tokens.TokenEndpoint,
+		AuthorizationEndpoint: tokens.AuthorizationEndpoint,
+		Resource:              tokens.Resource,
 	}
 
 	dir := filepath.Dir(s.path)

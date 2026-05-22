@@ -16,7 +16,7 @@ Strict unidirectional dependency flow: `cmd → presentation → infrastructure 
 
 - `cmd/` — Thin Cobra command orchestration. Each file registers subcommands in `init()`.
 - `internal/infrastructure/api/` — HTTP client with auto token refresh.
-- `internal/infrastructure/auth/` — OAuth 2.1 PKCE flow + token persistence.
+- `internal/infrastructure/auth/` — OAuth 2.1 PKCE flow, protected-resource discovery, and token persistence.
 - `internal/infrastructure/config/` — Server URL, default profile, config resolution.
 - `internal/presentation/` — Bubbletea TUI models and views.
 - `internal/shared/constants/` — App name, config dir name, default server.
@@ -39,3 +39,5 @@ No backward dependencies. `shared/` has zero internal imports. `infrastructure/`
 ## Server
 
 Default: `https://openmarkers.app` (configurable via `--server` or `OPENMARKERS_SERVER`).
+
+OAuth login discovers `/.well-known/oauth-protected-resource` from the OpenMarkers API and then follows the advertised authorization server. Do not hardcode `/.well-known/oauth-authorization-server` on the API origin.
