@@ -326,9 +326,9 @@ func authorizationServerMetadataURLs(issuer string) []string {
 	}).String()
 
 	return []string{
-		standard,
 		issuer + "/.well-known/openid-configuration",
 		issuer + "/.well-known/oauth-authorization-server",
+		standard,
 	}
 }
 

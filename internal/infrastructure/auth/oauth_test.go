@@ -10,11 +10,11 @@ import (
 )
 
 func TestAuthorizationServerMetadataURLsForPathIssuer(t *testing.T) {
-	got := authorizationServerMetadataURLs("https://auth.nezdemkovski.cloud/openmarkers")
+	got := authorizationServerMetadataURLs("https://auth.nezdemkovski.cloud/api/openmarkers")
 	want := []string{
-		"https://auth.nezdemkovski.cloud/.well-known/oauth-authorization-server/openmarkers",
-		"https://auth.nezdemkovski.cloud/openmarkers/.well-known/openid-configuration",
-		"https://auth.nezdemkovski.cloud/openmarkers/.well-known/oauth-authorization-server",
+		"https://auth.nezdemkovski.cloud/api/openmarkers/.well-known/openid-configuration",
+		"https://auth.nezdemkovski.cloud/api/openmarkers/.well-known/oauth-authorization-server",
+		"https://auth.nezdemkovski.cloud/.well-known/oauth-authorization-server/api/openmarkers",
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -31,15 +31,15 @@ func TestAuthorizationServerMetadataURLsRejectsInvalidIssuer(t *testing.T) {
 func TestDiscoverUsesProtectedResourceAndAuthorizationServerMetadata(t *testing.T) {
 	var authServer *httptest.Server
 	authServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/.well-known/oauth-authorization-server/openmarkers" {
+		if r.URL.Path != "/api/openmarkers/.well-known/openid-configuration" {
 			http.NotFound(w, r)
 			return
 		}
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"issuer":                 authServer.URL + "/openmarkers",
-			"authorization_endpoint": authServer.URL + "/openmarkers/authorize",
-			"token_endpoint":         authServer.URL + "/openmarkers/token",
-			"registration_endpoint":  authServer.URL + "/openmarkers/register",
+			"issuer":                 authServer.URL + "/api/openmarkers",
+			"authorization_endpoint": authServer.URL + "/api/openmarkers/auth/oauth2/authorize",
+			"token_endpoint":         authServer.URL + "/api/openmarkers/auth/oauth2/token",
+			"registration_endpoint":  authServer.URL + "/api/openmarkers/auth/oauth2/register",
 		})
 	}))
 	defer authServer.Close()
@@ -51,7 +51,7 @@ func TestDiscoverUsesProtectedResourceAndAuthorizationServerMetadata(t *testing.
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"resource":              apiServerResource,
-			"authorization_servers": []string{authServer.URL + "/openmarkers"},
+			"authorization_servers": []string{authServer.URL + "/api/openmarkers"},
 		})
 	}))
 	defer apiServer.Close()
@@ -65,7 +65,7 @@ func TestDiscoverUsesProtectedResourceAndAuthorizationServerMetadata(t *testing.
 	if meta.Resource != apiServerResource {
 		t.Fatalf("Resource = %q, want %q", meta.Resource, apiServerResource)
 	}
-	if meta.AuthorizationEndpoint != authServer.URL+"/openmarkers/authorize" {
+	if meta.AuthorizationEndpoint != authServer.URL+"/api/openmarkers/auth/oauth2/authorize" {
 		t.Fatalf("AuthorizationEndpoint = %q", meta.AuthorizationEndpoint)
 	}
 }
